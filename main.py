@@ -1,5 +1,4 @@
 import logging
-import pprint
 import hashlib
 from pymongo import MongoClient
 from typing import List, Optional
@@ -66,8 +65,6 @@ books = [
         "sold_count": 0
     }
 ]
-
-pprint.pprint(books)
 
 # Inserts books into db
 async def insert_books():
