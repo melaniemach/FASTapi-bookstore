@@ -26,17 +26,15 @@ Michael Martinez #
   python3 -m venv myenv
   source myenv/bin/activate
   ```
-- When done working with virtual environment, run the following command to restore default Python environment:
- ```sh
-  deactivate
-  ```
+- When done working with virtual environment, run ``deactivate`` to restore default Python environment: 
+- 
 ### Step 3
 
 - Install the dependencies from `requierments.txt` 
   ```sh
   pip install -r .\requirements.txt
   ```
-
+  
 ### Step 4 
 
 - Run the following command to start the API
