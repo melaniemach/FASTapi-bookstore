@@ -191,8 +191,12 @@ async def buy_book(book_id: str):
 # Get the total number of books in the store
 @app.get("/stats/total_books")
 async def get_total_books():
-    total_books = await collection.count_documents({})
-    return {"total_books": total_books}
+    pipeline = [
+        {"$group": {"_id": None, "total_stock": {"$sum": "$stock"}}},
+        {"$project": {"_id": 0}}
+    ]
+    total_stock = await collection.aggregate(pipeline).to_list(length=None)
+    return total_stock[0] if total_stock else {"total_stock": 0}
 
 # Get the top 5 bestselling books
 @app.get("/stats/top_selling_books")
