@@ -9,7 +9,8 @@ CPSC 449 Final Project
 Melanie Mach #888079639
 melaniemach@csu.fullerton.edu
 
-Michael Martinez #
+Michael Martinez #886914472
+michael.mar413@csu.fullerton.edu
 
 ## Steps to run (based on MacOS):
 
