@@ -8,7 +8,7 @@ Melanie Mach #888079639
 
 Michael Martinez #
 
-## Steps to run:
+## Steps to run (based on MacOS):
 
 ### Step 1
 
@@ -16,17 +16,28 @@ Michael Martinez #
   ``` sh
    cd '<repository location>'
    cd 'FASTapi-bookstore'
-   cd 'bookstore'
   ```
 
 ### Step 2
+
+- Create a virtual environment (assuming user has most recent Python version)
+  ```sh
+  python3 -m pip install virtualenv
+  python3 -m venv myenv
+  source myenv/bin/activate
+  ```
+- When done working with virtual environment, run the following command to restore default Python environment:
+ ```sh
+  deactivate
+  ```
+### Step 3
 
 - Install the dependencies from `requierments.txt` 
   ```sh
   pip install -r .\requirements.txt
   ```
 
-### Step 3 
+### Step 4 
 
 - Run the following command to start the API
   ```sh
@@ -38,7 +49,7 @@ Michael Martinez #
   ```
  - Uvicorn will start and display the URL where your application is running. `ex.: 'http://127.0.0.1:8000'`
 
-### Step 4 
+### Step 5
 
 - Open a web browser and navigate to `http://127.0.0.1:8000/docs#/`
 - Use each Dev Helper to help run endpoints and you should be set to run each route!
