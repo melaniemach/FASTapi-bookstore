@@ -28,11 +28,6 @@ async def load_data_from_file(file_path: str):
         data = json.load(file)
         await collection.insert_many(data)
 
-@app.on_event("startup")
-async def startup():
-    await create_indexes()
-    await load_data_from_file("books.json")
-
 # Indexes
 async def create_indexes():
     await collection.create_index("title")
@@ -42,6 +37,7 @@ async def create_indexes():
 @app.on_event("startup")
 async def startup():
     await create_indexes()
+    await load_data_from_file("books.json")
 
 # Routes
 
