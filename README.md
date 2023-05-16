@@ -27,7 +27,7 @@ Michael Martinez #
   source myenv/bin/activate
   ```
 - When done working with virtual environment, run ``deactivate`` to restore default Python environment: 
-- 
+
 ### Step 3
 
 - Install the dependencies from `requierments.txt` 
