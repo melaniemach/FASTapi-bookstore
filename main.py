@@ -167,7 +167,6 @@ async def search_books(title: Optional[str] = None, author: Optional[str] = None
     return results
 
 # Buy books
-# Buy books
 @app.post("/books/{book_id}/buy")
 async def buy_book(book_id: str):
     """
