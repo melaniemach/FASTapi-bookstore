@@ -1,5 +1,4 @@
 import logging
-import uuid
 import pprint
 import hashlib
 from pymongo import MongoClient
