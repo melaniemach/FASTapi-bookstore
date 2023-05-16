@@ -50,5 +50,6 @@ Michael Martinez #
 ### Step 5
 
 - Open a web browser and navigate to `http://127.0.0.1:8000/docs#/`
-- Use each Dev Helper to help run endpoints and you should be set to run each route!
+- Use Swagger UI to help run endpoints and you should be set to run each route!
+  - Video will demonstrate how to use Swagger UI
 
