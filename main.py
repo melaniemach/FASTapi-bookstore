@@ -113,12 +113,16 @@ async def get_book(book_id: str):
 @app.post("/books")
 async def add_book(book: Book):
     book_dict = book.dict()
-    if await collection.find_one({"_id": book_dict["id"]}):
-        raise HTTPException(status_code=400, detail="Book id already in use")
-    inserted_book = await collection.insert_one(book_dict)
-    book_id = str(inserted_book.inserted_id) 
-    return {"message": "Book added successfully", "book_id": book_id}
+    book_id = book_dict.get("id")
+    
+    # Check if a book with the same ID already exists
+    existing_book = await collection.find_one({"_id": book_id})
+    if existing_book:
+        raise HTTPException(status_code=400, detail="Book with the same ID already exists")
 
+    inserted_book = await collection.insert_one(book_dict)
+    book_id = str(inserted_book.inserted_id)
+    return {"message": "Book added successfully", "book_id": book_id}
 
 
 # Update book
@@ -131,17 +135,16 @@ async def update_book(book_id: str, book: Book):
         return {"message": "Book updated successfully"}
     else:
         raise HTTPException(status_code=404, detail="Book not found")
-
-    
+   
 # Delete books
 @app.delete("/books/{book_id}")
 async def delete_book(book_id: str):
-    deleted_book = await collection.delete_one({"_id": book_id})
+    deleted_book = await collection.delete_one({"_id": ObjectId(book_id)})
     if deleted_book.deleted_count:
         return {"message": "Book deleted successfully"}
     else:
         raise HTTPException(status_code=404, detail="Book not found")
-
+    
 # Search books
 @app.get("/search", response_model=List[Book])
 async def search_books(title: Optional[str] = None, author: Optional[str] = None, min_price: Optional[float] = None, max_price: Optional[float] = None):
@@ -164,19 +167,20 @@ async def search_books(title: Optional[str] = None, author: Optional[str] = None
     return results
 
 # Buy books
+# Buy books
 @app.post("/books/{book_id}/buy")
 async def buy_book(book_id: str):
     """
     Buys a book if it is in stock.
     """
     updated_book = await collection.find_one_and_update(
-        {"_id": book_id, "stock": {"$gt": 0}},
+        {"_id": ObjectId(book_id), "stock": {"$gt": 0}},
         {"$inc": {"stock": -1, "sold_count": 1}}
     )
     if updated_book:
         return {"message": "Book bought successfully"}
     else:
-        book = await collection.find_one({"_id": book_id})
+        book = await collection.find_one({"_id": ObjectId(book_id)})
         if book:
             raise HTTPException(status_code=400, detail="Book is out of stock")
         else:
