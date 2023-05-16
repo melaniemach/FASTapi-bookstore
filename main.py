@@ -1,6 +1,7 @@
 import logging
 import uuid
 import pprint
+import hashlib
 from pymongo import MongoClient
 from typing import List, Optional
 from fastapi import FastAPI, HTTPException, Depends
@@ -14,6 +15,7 @@ app = FastAPI()
 client = AsyncIOMotorClient("mongodb://localhost:27017")
 db = client["bookstore"]
 collection = db["books"]
+collection.delete_many({})
 
 # Book model
 class Book(BaseModel):
@@ -31,9 +33,14 @@ class Book(BaseModel):
             ObjectId: str
         }
 
+# This function stops repeat UUID generation
+def generate_uuid(title: str, author: str) -> str:
+    data = f"{title}{author}"
+    return hashlib.md5(data.encode()).hexdigest()
+
 books = [
     {
-        "id": str(uuid.uuid4()),
+        "id": generate_uuid("Book 1", "Author 1"),
         "title": "Book 1",
         "author": "Author 1",
         "description": "Description 1",
@@ -42,7 +49,7 @@ books = [
         "sold_count": 0
     },
     {
-        "id": str(uuid.uuid4()),
+        "id": generate_uuid("Book 2", "Author 2"),
         "title": "Book 2",
         "author": "Author 2",
         "description": "Description 2",
@@ -51,7 +58,7 @@ books = [
         "sold_count": 0
     },
     {
-        "id": str(uuid.uuid4()),
+        "id": generate_uuid("Book 3", "Author 3"),
         "title": "Book 3",
         "author": "Author 3",
         "description": "Description 3",
