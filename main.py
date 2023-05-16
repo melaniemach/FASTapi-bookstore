@@ -1,8 +1,12 @@
 import logging
+import uuid
+import pprint
+from pymongo import MongoClient
 from typing import List, Optional
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
+from bson import ObjectId
 
 app = FastAPI()
 
@@ -13,7 +17,7 @@ collection = db["books"]
 
 # Book model
 class Book(BaseModel):
-    id: int
+    id: Optional[str]
     title: str
     author: str
     description: str
@@ -21,9 +25,15 @@ class Book(BaseModel):
     stock: int
     sold_count: int = 0 
 
+    class Config:
+        arbitrary_types_allowed = True
+        json_encoders = {
+            ObjectId: str
+        }
+
 books = [
     {
-        "id": 1,
+        "id": str(uuid.uuid4()),
         "title": "Book 1",
         "author": "Author 1",
         "description": "Description 1",
@@ -32,7 +42,7 @@ books = [
         "sold_count": 0
     },
     {
-        "id": 2,
+        "id": str(uuid.uuid4()),
         "title": "Book 2",
         "author": "Author 2",
         "description": "Description 2",
@@ -41,7 +51,7 @@ books = [
         "sold_count": 0
     },
     {
-        "id": 3,
+        "id": str(uuid.uuid4()),
         "title": "Book 3",
         "author": "Author 3",
         "description": "Description 3",
@@ -51,8 +61,13 @@ books = [
     }
 ]
 
+pprint.pprint(books)
+
 # Inserts books into db
 async def insert_books():
+    for book in books:
+        book["_id"] = book["id"]
+        del book["id"]
     await collection.insert_many(books)
 
 # Indexes
@@ -80,17 +95,17 @@ async def startup():
 # Routes
 
 # Get all books
-@app.get("/books")
+@app.get("/books", response_model=List[Book])
 async def get_books():
     books = await collection.find().to_list(1000)
-    return books
+    return [{**book, "id": str(book["_id"])} for book in books]
 
 # Get a specific book by ID
-@app.get("/books/{book_id}")
-async def get_book(book_id: int):
-    book = await collection.find_one({"id": book_id})
+@app.get("/books/{book_id}", response_model=Book)
+async def get_book(book_id: str):
+    book = await collection.find_one({"_id": ObjectId(book_id)})
     if book:
-        return book
+        return {**book, "id": str(book["_id"])}
     else:
         raise HTTPException(status_code=404, detail="Book not found")
 
@@ -98,23 +113,30 @@ async def get_book(book_id: int):
 @app.post("/books")
 async def add_book(book: Book):
     book_dict = book.dict()
+    if await collection.find_one({"_id": book_dict["id"]}):
+        raise HTTPException(status_code=400, detail="Book id already in use")
     inserted_book = await collection.insert_one(book_dict)
-    book_id = inserted_book.inserted_id
+    book_id = str(inserted_book.inserted_id) 
     return {"message": "Book added successfully", "book_id": book_id}
 
+
+
+# Update book
 @app.put("/books/{book_id}")
-async def update_book(book_id: int, book: Book):
+async def update_book(book_id: str, book: Book):
+    print(book.dict())   
     book_dict = book.dict(exclude_unset=True)
-    updated_book = await collection.update_one({"id": book_id}, {"$set": book_dict})
+    updated_book = await collection.update_one({"_id": ObjectId(book_id)}, {"$set": book_dict})
     if updated_book.modified_count:
         return {"message": "Book updated successfully"}
     else:
         raise HTTPException(status_code=404, detail="Book not found")
+
     
 # Delete books
 @app.delete("/books/{book_id}")
 async def delete_book(book_id: str):
-    deleted_book = await collection.delete_one({"id": book_id})
+    deleted_book = await collection.delete_one({"_id": book_id})
     if deleted_book.deleted_count:
         return {"message": "Book deleted successfully"}
     else:
@@ -123,24 +145,23 @@ async def delete_book(book_id: str):
 # Search books
 @app.get("/search", response_model=List[Book])
 async def search_books(title: Optional[str] = None, author: Optional[str] = None, min_price: Optional[float] = None, max_price: Optional[float] = None):
-    results = []
-    for book in books:
-        if title and title.lower() not in book["title"].lower():
-            continue
-        if author and author.lower() not in book["author"].lower():
-            continue
-        if min_price and book["price"] < min_price:
-            continue
-        if max_price and book["price"] > max_price:
-            continue
-        results.append(book)
-        return results
-    
-# Get the total number of books in the store
-@app.get("/stats/total_books")
-async def get_total_books():
-    total_books = await collection.count_documents({})
-    return {"total_books": total_books}
+    query = {}
+
+    if title:
+        query["title"] = {"$regex": f".*{title}.*", "$options": "i"}
+    if author:
+        query["author"] = {"$regex": f".*{author}.*", "$options": "i"}
+    if min_price:
+        if "price" not in query:
+            query["price"] = {}
+        query["price"]["$gte"] = min_price
+    if max_price:
+        if "price" not in query:
+            query["price"] = {}
+        query["price"]["$lte"] = max_price
+
+    results = await collection.find(query).to_list(1000)
+    return results
 
 # Buy books
 @app.post("/books/{book_id}/buy")
@@ -148,22 +169,24 @@ async def buy_book(book_id: str):
     """
     Buys a book if it is in stock.
     """
-    book = await collection.find_one({"id": book_id})
-    if book:
-        if book["stock"] <= 0:
+    updated_book = await collection.find_one_and_update(
+        {"_id": book_id, "stock": {"$gt": 0}},
+        {"$inc": {"stock": -1, "sold_count": 1}}
+    )
+    if updated_book:
+        return {"message": "Book bought successfully"}
+    else:
+        book = await collection.find_one({"_id": book_id})
+        if book:
             raise HTTPException(status_code=400, detail="Book is out of stock")
-
-        book["stock"] -= 1
-        book["sold_count"] += 1
-
-        updated_book = await collection.update_one({"id": book_id}, {"$set": book})
-        if updated_book.modified_count:
-            return {"message": "Book bought successfully"}
         else:
             raise HTTPException(status_code=404, detail="Book not found")
-    else:
-        raise HTTPException(status_code=404, detail="Book not found")
-
+        
+# Get the total number of books in the store
+@app.get("/stats/total_books")
+async def get_total_books():
+    total_books = await collection.count_documents({})
+    return {"total_books": total_books}
 
 # Get the top 5 bestselling books
 @app.get("/stats/top_selling_books")
