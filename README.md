@@ -39,7 +39,7 @@ Michael Martinez #
   ```
 - OR
 - Install the dependencies using this command:
- ```sh
+  ```sh
   pip install pymongo fastapi motor pydantic
   ```
   
