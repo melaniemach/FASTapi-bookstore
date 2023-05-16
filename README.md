@@ -2,6 +2,8 @@
 
 CPSC 449 Final Project
 
+#### Link to Demo: https://www.dropbox.com/s/iw4d2mih709uwjd/FASTapi-bookstore-demo.mp4?dl=0
+
 ## By
 
 Melanie Mach #888079639
@@ -53,4 +55,7 @@ Michael Martinez #
 - Open a web browser and navigate to `http://127.0.0.1:8000/docs#/`
 - Use Swagger UI to help run endpoints and you should be set to run each route!
   - Video will demonstrate how to use Swagger UI
+
+
+
 
