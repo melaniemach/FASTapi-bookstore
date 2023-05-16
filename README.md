@@ -37,7 +37,7 @@ Michael Martinez #
   ```sh
   pip install -r .\requirements.txt
   ```
-- OR
+  OR
 - Install the dependencies using this command:
   ```sh
   pip install pymongo fastapi motor pydantic
